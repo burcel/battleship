@@ -1,6 +1,5 @@
 from typing import List, Tuple
 import secrets
-import string
 
 
 class Board:
@@ -8,7 +7,7 @@ class Board:
     # Cell representation
     EMPTY = ' '
     HIT = 'X'
-    MISS = '0'
+    MISS = 'O'
     SHIP = 'S'
     # Total ship count with respect to sizes
     SHIP_SIZE_LIST = [2, 3, 3, 4, 5]
@@ -21,6 +20,8 @@ class Board:
 
     def __init__(self):
         self._board = None
+        self._ship_coordinate_list: List[Tuple[int, int]] = []
+        self._finished = False
         self._init_board()
 
     def __str__(self) -> str:
@@ -29,8 +30,9 @@ class Board:
         """
         board_str = self._return_row_line()
         # Prepare column index
-        for char in "*" + string.ascii_uppercase[:self.BOARD_DIM]:
-            board_str += "| {} ".format(char)
+        board_str += "| * "
+        for column_index in range(self.BOARD_DIM):
+            board_str += "| {} ".format(column_index)
         board_str += "|\n"
         board_str += self._return_row_line()
         # Prepare board content along with row index
@@ -87,6 +89,7 @@ class Board:
                     # Every ship part can be properly placed
                     for x, y in coordinate_list:
                         self._board[x][y] = self.SHIP
+                        self._ship_coordinate_list.append((x, y))
                 break
 
     def _return_coordinates(self, x: int, y: int, direction: int, ship_size: int) -> List[Tuple[int, int]]:
@@ -124,6 +127,20 @@ class Board:
         """
         return self._board[x][y]
 
+    def return_ship_coordinate_list(self) -> List[Tuple[int, int]]:
+        """
+        Return coordination of ship parts as a list
+        """
+        return self._ship_coordinate_list
+
+    def return_status(self) -> bool:
+        """
+        Return board status as boolean
+        True -> All ship parts are hit and the game is finished
+        False -> There are still remaining ship parts
+        """
+        return self._finished
+
     def hit(self, x: int, y: int) -> bool:
         """
         Hit given x, y coordinates and return True if hit is successful
@@ -136,5 +153,17 @@ class Board:
         elif self._board[x][y] == self.SHIP:
             self._board[x][y] = self.HIT
             is_hit = True
+            self.check_game_status()
         return is_hit
+
+    def check_game_status(self) -> None:
+        """
+        Check game status and update finished variable
+        """
+        status = True
+        for x, y in self._ship_coordinate_list:
+            if self._board[x][y] != self.HIT:
+                status = False
+                break
+        self._finished = status
 
