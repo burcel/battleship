@@ -11,6 +11,7 @@ class Board:
     SHIP = 'S'
     # Total ship count with respect to sizes
     SHIP_SIZE_LIST = [2, 3, 3, 4, 5]
+    SHIP_PART_COUNT = sum(SHIP_SIZE_LIST)
     # Ship direction for randomized placement
     UP = 0
     DOWN = 1
@@ -62,6 +63,15 @@ class Board:
             for j in range(self.BOARD_DIM):
                 row.append(self.EMPTY)
             self._board.append(row)
+
+    def check_boundaries(self, x: int, y: int):
+        """
+        Check whether given boundaries are valid
+        """
+        if not 0 <= x < self.BOARD_DIM:
+            raise Exception("Invalid x value for board!")
+        if not 0 <= y < self.BOARD_DIM:
+            raise Exception("Invalid y value for board!")
 
     def return_board(self) -> List[List[str]]:
         """
@@ -121,6 +131,18 @@ class Board:
 
         return coordinate_list
 
+    def _check_game_status(self) -> None:
+        """
+        Check game status and update finished variable
+        """
+        sunk_ship_part_count = 0
+        for x, y in self._ship_coordinate_list:
+            if self._board[x][y] != self.HIT:
+                break
+            else:
+                sunk_ship_part_count += 1
+        self._finished = sunk_ship_part_count == self.SHIP_PART_COUNT
+
     def return_cell(self, x: int, y: int) -> str:
         """
         Return cell content
@@ -147,23 +169,26 @@ class Board:
         If cell is empty -> Miss
         IF cell is not empty -> Hit
         """
+        self.check_boundaries(x, y)
         is_hit = False
         if self._board[x][y] == self.EMPTY:
             self._board[x][y] = self.MISS
         elif self._board[x][y] == self.SHIP:
             self._board[x][y] = self.HIT
             is_hit = True
-            self.check_game_status()
+            self._check_game_status()
         return is_hit
 
-    def check_game_status(self) -> None:
+    def record(self, x: int, y: int, status: str) -> None:
         """
-        Check game status and update finished variable
+        Record given cell status (Used for reconnaissance when ship locations are not known)
+        status: Union[HIT, MISS]
         """
-        status = True
-        for x, y in self._ship_coordinate_list:
-            if self._board[x][y] != self.HIT:
-                status = False
-                break
-        self._finished = status
+        self.check_boundaries(x, y)
+        if status != self.HIT and status != self.MISS:
+            raise Exception("Status can only be Hit or Miss value!")
 
+        self._board[x][y] = status
+        if status == self.HIT:
+            self._ship_coordinate_list.append((x, y))
+            self._check_game_status()
