@@ -19,7 +19,7 @@ class Client:
         try:
             self._connect()
             self._register()
-            input("a")
+            self._wait_server()
         except KeyboardInterrupt:
             print("Shutting down the client... Bye!")
         except Exception:
@@ -74,6 +74,14 @@ class Client:
                     break
                 else:
                     print(Message.ENTER_VALID_USERNAME)
+
+    def _wait_server(self) -> None:
+        """
+        Initialize game process
+        """
+        while True:
+            message = self._receive()
+            print(message)
 
 
 if __name__ == '__main__':

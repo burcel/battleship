@@ -1,13 +1,15 @@
 import socket
+from prettytable import PrettyTable
 from config_parser import ConfigParser
 from server_connection import ServerConnection
-from typing import Dict
+from typing import Dict, List, Tuple
 
 
 class Server:
     def __init__(self):
         self.config_parser = ConfigParser()
         self._client_dict: Dict[str, ServerConnection] = {}
+        self._game_dict: Dict[Tuple[str, str], None] = {}
 
     def start(self) -> None:
         """
@@ -56,11 +58,42 @@ class Server:
         """
         return username in self._client_dict
 
-    def return_lobby(self) -> str:
+    def _return_lobby(self) -> str:
         """
         Return lobby information as str
         """
-        return ""
+        pt = PrettyTable()
+        pt.field_names = ["Username", "Available"]
+        for username, server_connection in self._client_dict.items():
+            game_status = "Yes" if server_connection.return_game_status() is False else "No"
+            pt.add_row([username, game_status])
+        return pt.get_string()
+
+    def broadcast_lobby(self) -> None:
+        """
+        Broadcast lobby information to other clients who are not on a game
+        """
+        for username, server_connection in self._client_dict.items():
+            if server_connection.return_game_status() is False:
+                server_connection.send(self._return_lobby())
+
+    def find_game(self, username: str) -> bool:
+        """
+        Find game for given username and return result as boolean
+        True: Game is found
+        False: Could not find any game
+        """
+        game_found = False
+        for client_username, server_connection in self._client_dict.items():
+            if client_username == username:
+                continue
+            if server_connection.return_game_status() is False:
+                self._client_dict[username].change_game_statue()
+                server_connection.change_game_statue()
+                self._game_dict[(username, client_username)] = None
+                game_found = True
+                break
+        return game_found
 
 
 if __name__ == '__main__':
