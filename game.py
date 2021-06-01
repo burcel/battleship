@@ -1,21 +1,53 @@
 from board import Board
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 
 class Game:
     def __init__(self):
-        self._board = Board()
-        self._board.populate()
-        self._opponent_board = Board()
+        self._board_tuple = (Board(), Board())
+        self._turn = 0
+
+    def return_turn(self) -> int:
+        """
+        Return turn info as integer
+        0: First board will play
+        1: Second board will play
+        """
+        return self._turn
+
+    def change_turn(self) -> None:
+        """
+        Change turn
+        """
+        self._turn = 1 - self._turn
+
+    def prepare_server(self) -> None:
+        """
+        Prepare boards for clients
+        """
+        self._board_tuple[0].populate()
+        self._board_tuple[1].populate()
+
+    def prepare_client(self, ship_parts_list: List[Tuple[int, int]]) -> None:
+        """
+        Prepare board with respect to given ship part list provided by server
+        """
+        pass
+
+    def return_board(self, index: int) -> Board:
+        """
+        Return board object with respect to index
+        """
+        return self._board_tuple[index]
 
     def print_state(self) -> None:
         """
         Print the boards of player and opponent
         """
         print("--> Board")
-        print(self._board)
+        print(self._board_tuple[0])
         print("--> Opponent Board")
-        print(self._opponent_board)
+        print(self._board_tuple[1])
 
     def _validate_input(self, user_input: str) -> Union[Tuple[bool, str], Tuple[bool, int, int]]:
         """

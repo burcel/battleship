@@ -3,13 +3,16 @@ from prettytable import PrettyTable
 from config_parser import ConfigParser
 from server_connection import ServerConnection
 from typing import Dict, List, Tuple
+from message import Message
+from game import Game
+import json
 
 
 class Server:
     def __init__(self):
         self.config_parser = ConfigParser()
         self._client_dict: Dict[str, ServerConnection] = {}
-        self._game_dict: Dict[Tuple[str, str], None] = {}
+        self._game_dict: Dict[Tuple[str, str], Game] = {}
 
     def start(self) -> None:
         """
@@ -71,29 +74,45 @@ class Server:
 
     def broadcast_lobby(self) -> None:
         """
-        Broadcast lobby information to other clients who are not on a game
+        Broadcast lobby information to other clients who are not in a game
         """
         for username, server_connection in self._client_dict.items():
             if server_connection.return_game_status() is False:
                 server_connection.send(self._return_lobby())
 
-    def find_game(self, username: str) -> bool:
+    def find_game(self, username: str) -> Tuple[bool, Tuple[str, str]]:
         """
         Find game for given username and return result as boolean
         True: Game is found
         False: Could not find any game
         """
         game_found = False
+        game_key = None
         for client_username, server_connection in self._client_dict.items():
             if client_username == username:
+                # Skip if it is the same user
                 continue
             if server_connection.return_game_status() is False:
+                # Client is available
+                game_found = True
+                # Change game status
                 self._client_dict[username].change_game_statue()
                 server_connection.change_game_statue()
-                self._game_dict[(username, client_username)] = None
-                game_found = True
+                # Send notification to clients
+                server_connection.send(Message.GAME_READY.format(username))
+                self._client_dict[username].send(Message.GAME_READY.format(client_username))
+                # Prepare game session and populate boards
+                game_key = (client_username, username)
+                game = Game()
+                game.prepare_server()
+                self._game_dict[game_key] = game
+                # Send board info to clients
+                first_player_ship_coordinates = json.dumps(game.return_board(0).return_ship_coordinate_list())
+                self._client_dict[game_key[0]].send(first_player_ship_coordinates)
+                second_player_ship_coordinates = json.dumps(game.return_board(1).return_ship_coordinate_list())
+                self._client_dict[game_key[1]].send(second_player_ship_coordinates)
                 break
-        return game_found
+        return game_found, game_key
 
 
 if __name__ == '__main__':

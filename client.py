@@ -65,6 +65,7 @@ class Client:
         while True:
             message = self._receive()
             if message == Message.OK:
+                print("Username accepted. Welcome!")
                 break
             print(message)
             while True:

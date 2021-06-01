@@ -13,17 +13,19 @@ class ServerConnection(threading.Thread):
         self._address = address
         self._username = None
         self._in_game = False
+        self._game_key = None
 
     def run(self) -> None:
         """
         Start server listener thread for particular client
         """
         self._register()
+        # A new user has entered the lobby -> Notify others
         self._server.broadcast_lobby()
-
+        # Try to find a game for user
+        self._initiate_game()
         try:
-            self._initiate_game()
-            self.listen()
+            self._play_game()
         except ConnectionResetError as e:
             print("Closed connection.")
             # TODO: clean client info from server
@@ -31,7 +33,7 @@ class ServerConnection(threading.Thread):
         except Exception:
             print(traceback.format_exc())
 
-    def listen(self) -> None:
+    def _play_game(self) -> None:
         """
         Listen for incoming messages
         """
@@ -95,8 +97,9 @@ class ServerConnection(threading.Thread):
         """
         Initialize game process
         """
-        game_found = self._server.find_game(self._username)
-        self.send(str(game_found))
-        print(self._server._game_dict)
-
+        game_found, game_key = self._server.find_game(self._username)
+        if game_found is False:
+            self.send(Message.GAME_NOT_READY)
+        else:
+            self._game_key = game_key
 
