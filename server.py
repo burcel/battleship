@@ -108,9 +108,12 @@ class Server:
                 self._game_dict[game_key] = game
                 # Send board info to clients
                 first_player_ship_coordinates = json.dumps(game.return_board(0).return_ship_coordinate_list())
-                self._client_dict[game_key[0]].send(first_player_ship_coordinates)
+                self._client_dict[game_key[0]].send("{}-{}".format(Message.SHIP, first_player_ship_coordinates))
                 second_player_ship_coordinates = json.dumps(game.return_board(1).return_ship_coordinate_list())
-                self._client_dict[game_key[1]].send(second_player_ship_coordinates)
+                self._client_dict[game_key[1]].send("{}-{}".format(Message.SHIP, second_player_ship_coordinates))
+                # Send turn info
+                self._client_dict[game_key[0]].send(Message.MOVE)
+                self._client_dict[game_key[1]].send(Message.WAIT)
                 break
         return game_found, game_key
 

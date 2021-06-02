@@ -32,7 +32,7 @@ class Game:
         """
         Prepare board with respect to given ship part list provided by server
         """
-        pass
+        self._board_tuple[0].record_ship_info(ship_parts_list)
 
     def return_board(self, index: int) -> Board:
         """
@@ -40,12 +40,17 @@ class Game:
         """
         return self._board_tuple[index]
 
-    def print_state(self) -> None:
+    def print_self(self) -> None:
         """
-        Print the boards of player and opponent
+        Print the board of player
         """
         print("--> Board")
         print(self._board_tuple[0])
+
+    def print_opponent(self) -> None:
+        """
+        Print the board of opponent
+        """
         print("--> Opponent Board")
         print(self._board_tuple[1])
 
@@ -90,8 +95,7 @@ class Game:
 
         return x, y
 
-    def take_action(self):
+    def record_action(self):
         pass
 
-    def receive_action(self):
-        pass
+

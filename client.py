@@ -1,7 +1,11 @@
 import traceback
 import socket
+import json
 from config_parser import ConfigParser
 from message import Message
+from game import Game
+from typing import Optional
+from board import Board
 
 
 class Client:
@@ -10,6 +14,7 @@ class Client:
     def __init__(self):
         self._sock = None
         self._username = None
+        self._game: Optional[Game] = None
         self.config_parser = ConfigParser()
 
     def start(self) -> None:
@@ -20,6 +25,7 @@ class Client:
             self._connect()
             self._register()
             self._wait_server()
+            self._play()
         except KeyboardInterrupt:
             print("Shutting down the client... Bye!")
         except Exception:
@@ -45,7 +51,7 @@ class Client:
         """
         self._sock.sendall(message.encode("UTF-8"))
 
-    def _receive(self) -> bytes:
+    def _receive(self) -> str:
         """
         Receive message from socket
         """
@@ -78,11 +84,37 @@ class Client:
 
     def _wait_server(self) -> None:
         """
-        Initialize game process
+        Wait until game is started by the server
         """
         while True:
             message = self._receive()
+            if message.startswith(Message.SHIP):
+                # Game is started
+                ship_coordinate_list = json.loads(message.split('-')[1])
+                self._game = Game()
+                self._game.prepare_client(ship_coordinate_list)
+                self._play()
+            else:
+                print(message)
+
+    def _play(self) -> None:
+        """
+        Play the game while communicating with server
+        """
+        self._game.print_self()
+        while True:
+            message = self._receive()
             print(message)
+            if message == Message.MOVE:
+                x, y = self._game.take_input()
+                self._send(json.dumps([x, y]))
+                result = self._receive()
+                if result is Board.HIT:
+                    pass
+                elif result is Board.MISS:
+                    pass
+            elif message == Message.WAIT:
+                print("Waiting for opponent to make a move...")
 
 
 if __name__ == '__main__':

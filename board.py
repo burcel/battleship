@@ -192,3 +192,11 @@ class Board:
         if status == self.HIT:
             self._ship_coordinate_list.append((x, y))
             self._check_game_status()
+
+    def record_ship_info(self, ship_coordinate_list: List[Tuple[int, int]]) -> None:
+        """
+        Save ship part coordinate info and record them to board
+        """
+        self._ship_coordinate_list = ship_coordinate_list
+        for x, y in self._ship_coordinate_list:
+            self._board[x][y] = self.SHIP
