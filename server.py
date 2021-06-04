@@ -106,6 +106,8 @@ class Server:
                 game = Game()
                 game.prepare_server()
                 self._game_dict[game_key] = game
+                self._client_dict[game_key[0]].save_game_key(game_key)
+                self._client_dict[game_key[1]].save_game_key(game_key)
                 # Send board info to clients
                 first_player_ship_coordinates = json.dumps(game.return_board(0).return_ship_coordinate_list())
                 self._client_dict[game_key[0]].send("{}-{}".format(Message.SHIP, first_player_ship_coordinates))
@@ -116,6 +118,15 @@ class Server:
                 self._client_dict[game_key[1]].send(Message.WAIT)
                 break
         return game_found, game_key
+
+    def play(self, game_key: Tuple[str, str]) -> None:
+        """
+        Continue playing
+        """
+        game = self._game_dict[game_key]
+        # Send turn info
+        self._client_dict[game_key[game.return_turn()]].send(Message.MOVE)
+        self._client_dict[1 - game_key[game.return_turn()]].send(Message.WAIT)
 
 
 if __name__ == '__main__':

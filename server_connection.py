@@ -1,6 +1,7 @@
 import threading
 import traceback
 from message import Message
+from typing import Tuple
 
 
 class ServerConnection(threading.Thread):
@@ -23,23 +24,15 @@ class ServerConnection(threading.Thread):
         # A new user has entered the lobby -> Notify others
         self._server.broadcast_lobby()
         # Try to find a game for user
-        self._initiate_game()
+        self._find_game()
         try:
-            self._play_game()
+            self._wait_client()
         except ConnectionResetError as e:
             print("Closed connection.")
             # TODO: clean client info from server
             # TODO: broadcast when somebody leaves
         except Exception:
             print(traceback.format_exc())
-
-    def _play_game(self) -> None:
-        """
-        Listen for incoming messages
-        """
-        while True:
-            message = self.receive()
-            print(message)
 
     def send(self, message: str) -> None:
         """
@@ -93,13 +86,33 @@ class ServerConnection(threading.Thread):
         """
         self._in_game = not self._in_game
 
-    def _initiate_game(self) -> None:
+    def _find_game(self) -> None:
         """
-        Initialize game process
+        Find a game session for current player, if no game is available -> send notification
         """
         game_found, game_key = self._server.find_game(self._username)
         if game_found is False:
             self.send(Message.GAME_NOT_READY)
-        else:
-            self._game_key = game_key
 
+    def _wait_client(self) -> None:
+        """
+        Wait until the acknowledgement from client that the game is ready
+        """
+        while True:
+            message = self.receive()
+            if message == Message.READY:
+                self._play_game()
+
+    def _play_game(self) -> None:
+        """
+        Listen for incoming messages
+        """
+        while True:
+            message = self.receive()
+            print(message)
+
+    def save_game_key(self, game_key: Tuple[str, str]) -> None:
+        """
+        Save game key given by server -> (username, username)
+        """
+        self._game_key = game_key

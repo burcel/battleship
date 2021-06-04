@@ -1,5 +1,6 @@
 class Message:
     OK = "OK"
+    READY = "READY"  # Indicates that the client is ready for the game
     MOVE = "MOVE"  # Indicates the client to make a move
     WAIT = "WAIT"  # Indicates the client to wait for the opponent to make a move
     SHIP = "SHIP"  # Information concerning ship parts

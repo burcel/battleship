@@ -25,7 +25,6 @@ class Client:
             self._connect()
             self._register()
             self._wait_server()
-            self._play()
         except KeyboardInterrupt:
             print("Shutting down the client... Bye!")
         except Exception:
@@ -105,7 +104,11 @@ class Client:
         while True:
             message = self._receive()
             print(message)
-            if message == Message.MOVE:
+            if message == Message.WIN:
+                print("You win!")
+            elif message == Message.LOSE:
+                print("You lose!")
+            elif message == Message.MOVE:
                 x, y = self._game.take_input()
                 self._send(json.dumps([x, y]))
                 result = self._receive()
