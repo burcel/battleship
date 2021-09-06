@@ -11,7 +11,6 @@ from jwt.exceptions import PyJWTError
 from schemas.user import Message, UserBaseLogin, UserBaseLoginResponse
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @router.post("/login", response_model=UserBaseLoginResponse, responses={
