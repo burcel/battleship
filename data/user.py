@@ -32,5 +32,11 @@ class UserData:
                 lobby_list.append(username)
         return lobby_list
 
+    async def broadcast_lobby(self, subject_username: str) -> None:
+        """Broadcast lobby info to other users who are in the lobby"""
+        for username, user in self._username_dict.items():
+            if username != subject_username and user.state == UserStateEnum.LOBBY and user.websocket is not None:
+                await user.websocket.send_json(subject_username)
+
 
 user_data = UserData()

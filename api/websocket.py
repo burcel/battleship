@@ -26,7 +26,9 @@ async def websocket_endpoint(websocket: WebSocket):
         # Token authenticate
         token = await websocket.receive_text()
         user = authenticate_socket(token)
+        user.websocket = websocket
         # Send lobby information
+        await user_data.broadcast_lobby(user.username)
         await websocket.send_json(user_data.return_lobby())
         while True:
             data = await websocket.receive_text()
@@ -38,4 +40,5 @@ async def websocket_endpoint(websocket: WebSocket):
         if user is None:
             return None
         user_data.remove_username(user.username)
+        await user_data.broadcast_lobby(user.username)
         # TODO: if user is in lobby -> Broadcast as left
