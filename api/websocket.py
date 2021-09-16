@@ -2,7 +2,8 @@ from core.security import decode_access_token
 from data.user import user_data
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from jwt.exceptions import PyJWTError
-from schemas.user import UserBaseLogin, UserStateEnum, UserBaseDatabase
+from schemas.user import UserBaseDatabase, UserBaseLogin, UserStateEnum
+from schemas.websocket import WebsocketResponse, WebsocketResponseEnum, User
 
 router = APIRouter()
 
@@ -27,9 +28,11 @@ async def websocket_endpoint(websocket: WebSocket):
         token = await websocket.receive_text()
         user = authenticate_socket(token)
         user.websocket = websocket
-        # Send lobby information
-        await user_data.broadcast_lobby(user.username)
-        await websocket.send_json(user_data.return_lobby())
+        # Send user info to lobby
+        response = WebsocketResponse(type=WebsocketResponseEnum.LOBBY_USER_IN, data=User(username=user.username))
+        await user_data.broadcast(user.username, UserStateEnum.LOBBY, response)
+        # Send lobby information to user
+        await websocket.send_json(user_data.return_lobby().dict())
         while True:
             data = await websocket.receive_text()
             await websocket.send_text(f"You wrote: {data}")
@@ -39,6 +42,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         if user is None:
             return None
+        if user.state == UserStateEnum.LOBBY:
+            # Send user info to lobby
+            response = WebsocketResponse(type=WebsocketResponseEnum.LOBBY_USER_OUT, data=User(username=user.username))
+            await user_data.broadcast(user.username, UserStateEnum.LOBBY, response)
         user_data.remove_username(user.username)
-        await user_data.broadcast_lobby(user.username)
-        # TODO: if user is in lobby -> Broadcast as left

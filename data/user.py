@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
 from schemas.user import UserBaseDatabase, UserStateEnum
+from schemas.websocket import Lobby, WebsocketResponse, WebsocketResponseEnum
 
 
 class UserData:
@@ -24,19 +25,20 @@ class UserData:
         """Remove username from user database"""
         self._username_dict.pop(username)
 
-    def return_lobby(self) -> List[str]:
+    def return_lobby(self) -> WebsocketResponse:
         """Return list of username"""
-        lobby_list: List[str] = []
+        user_list: List[str] = []
         for username, user in self._username_dict.items():
             if user.state == UserStateEnum.LOBBY:
-                lobby_list.append(username)
-        return lobby_list
+                user_list.append(username)
+        game_list: List[str] = []
+        return WebsocketResponse(type=WebsocketResponseEnum.LOBBY_INIT, data=Lobby(user_list=user_list, game_list=game_list))
 
-    async def broadcast_lobby(self, subject_username: str) -> None:
-        """Broadcast lobby info to other users who are in the lobby"""
+    async def broadcast(self, subject_username: str, user_state: UserStateEnum, response: WebsocketResponse) -> None:
+        """Broadcast the response to users with given state other than subject"""
         for username, user in self._username_dict.items():
-            if username != subject_username and user.state == UserStateEnum.LOBBY and user.websocket is not None:
-                await user.websocket.send_json(subject_username)
+            if username != subject_username and user.state == user_state and user.websocket is not None:
+                await user.websocket.send_json(response.dict())
 
 
 user_data = UserData()
