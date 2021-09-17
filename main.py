@@ -22,6 +22,8 @@ html = """
         <title>Chat</title>
     </head>
     <body>
+        <h1>Examples</h1>
+        <div style="padding-bottom: 10px;">{"type": "TOKEN", "token": ""}</div>
         <h1>WebSocket</h1>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>

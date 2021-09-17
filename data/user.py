@@ -1,7 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
+from fastapi import WebSocketDisconnect
 from schemas.user import UserBaseDatabase, UserStateEnum
-from schemas.websocket import Lobby, WebsocketResponse, WebsocketResponseEnum
+from schemas.websocket import WebsocketLobby, WebsocketResponseEnum, WebsocketUser
 
 
 class UserData:
@@ -25,16 +26,21 @@ class UserData:
         """Remove username from user database"""
         self._username_dict.pop(username)
 
-    def return_lobby(self) -> WebsocketResponse:
-        """Return list of username"""
+    async def send_lobby(self, user: UserBaseDatabase) -> None:
+        """Return lobby information"""
+        if user.websocket is None:
+            raise WebSocketDisconnect
+        # Create user list
         user_list: List[str] = []
-        for username, user in self._username_dict.items():
-            if user.state == UserStateEnum.LOBBY:
+        for username, user_session in self._username_dict.items():
+            if user_session.state == UserStateEnum.LOBBY:
                 user_list.append(username)
+        # Create game list
         game_list: List[str] = []
-        return WebsocketResponse(type=WebsocketResponseEnum.LOBBY_INIT, data=Lobby(user_list=user_list, game_list=game_list))
+        response = WebsocketLobby(type=WebsocketResponseEnum.LOBBY_INIT, user_list=user_list, game_list=game_list)
+        await user.websocket.send_json(response.dict())
 
-    async def broadcast(self, subject_username: str, user_state: UserStateEnum, response: WebsocketResponse) -> None:
+    async def broadcast(self, subject_username: str, user_state: UserStateEnum, response: Union[WebsocketUser]) -> None:
         """Broadcast the response to users with given state other than subject"""
         for username, user in self._username_dict.items():
             if username != subject_username and user.state == user_state and user.websocket is not None:
