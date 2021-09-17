@@ -2,11 +2,12 @@ from json.decoder import JSONDecodeError
 
 from core.security import decode_access_token
 from data.user import user_data
+from data.game import game_date
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from fastapi.logger import logger
 from jwt.exceptions import PyJWTError
 from schemas.user import UserBaseDatabase, UserBaseLogin, UserStateEnum
-from schemas.websocket import WebsocketBase, WebsocketResponseEnum, WebsocketToken, WebsocketUser
+from schemas.websocket import WebsocketBase, WebsocketResponseEnum, WebsocketToken, WebsocketUser, WebsocketGame
 
 router = APIRouter()
 
@@ -40,8 +41,15 @@ async def websocket_endpoint(websocket: WebSocket):
         # Send lobby information to user
         await user_data.send_lobby(user)
         while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"You wrote: {data}")
+            request = WebsocketBase(**await websocket.receive_json())
+            if request.type == WebsocketResponseEnum.GAME_CREATE and user.state == UserStateEnum.LOBBY:
+                game_id = game_date.register_game(user.username)
+                user.state = UserStateEnum.GAME
+                await websocket.send_json(WebsocketGame(type=WebsocketResponseEnum.GAME_CREATE, game_id=game_id).dict())
+            elif request.type == WebsocketResponseEnum.GAME_LEAVE:
+                pass
+            else:
+                await websocket.send_json(WebsocketBase(type=WebsocketResponseEnum.INVALID).dict())
     except (PyJWTError, JSONDecodeError, TypeError):
         await websocket.send_json(WebsocketBase(type=WebsocketResponseEnum.INVALID).dict())
     except WebSocketDisconnect:

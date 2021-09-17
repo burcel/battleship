@@ -24,6 +24,7 @@ html = """
     <body>
         <h1>Examples</h1>
         <div style="padding-bottom: 10px;">{"type": "TOKEN", "token": ""}</div>
+        <div style="padding-bottom: 10px;">{"type": "GAME_CREATE"}</div>
         <h1>WebSocket</h1>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
