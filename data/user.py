@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union
 
 from fastapi import WebSocketDisconnect
 from schemas.user import UserBaseDatabase, UserStateEnum
-from schemas.websocket import WebsocketLobby, WebsocketResponseEnum, WebsocketUser
+from schemas.websocket import WebsocketLobby, WebsocketResponseEnum, WebsocketUser, WebsocketGame
 
 
 class UserData:
@@ -40,7 +40,7 @@ class UserData:
         response = WebsocketLobby(type=WebsocketResponseEnum.LOBBY_INIT, user_list=user_list, game_list=game_list)
         await user.websocket.send_json(response.dict())
 
-    async def broadcast(self, subject_username: str, user_state: UserStateEnum, response: Union[WebsocketUser]) -> None:
+    async def broadcast(self, subject_username: Optional[str], user_state: UserStateEnum, response: Union[WebsocketUser, WebsocketGame]) -> None:
         """Broadcast the response to users with given state other than subject"""
         for username, user in self._username_dict.items():
             if username != subject_username and user.state == user_state and user.websocket is not None:

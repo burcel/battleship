@@ -2,7 +2,7 @@ from json.decoder import JSONDecodeError
 
 from core.security import decode_access_token
 from data.user import user_data
-from data.game import game_date
+from data.game import game_data
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from fastapi.logger import logger
 from jwt.exceptions import PyJWTError
@@ -36,21 +36,25 @@ async def websocket_endpoint(websocket: WebSocket):
         # Valid user -> Save websocket
         user.websocket = websocket
         # Send user info to lobby
-        response = WebsocketUser(type=WebsocketResponseEnum.LOBBY_USER_IN, username=user.username)
-        await user_data.broadcast(user.username, UserStateEnum.LOBBY, response)
+        await user_data.broadcast(user.username, UserStateEnum.LOBBY, WebsocketUser(type=WebsocketResponseEnum.LOBBY_USER_IN, username=user.username))
         # Send lobby information to user
         await user_data.send_lobby(user)
         while True:
-            request = WebsocketBase(**await websocket.receive_json())
-            if request.type == WebsocketResponseEnum.GAME_CREATE and user.state == UserStateEnum.LOBBY:
-                game_id = game_date.register_game(user.username)
-                user.state = UserStateEnum.GAME
-                await websocket.send_json(WebsocketGame(type=WebsocketResponseEnum.GAME_CREATE, game_id=game_id).dict())
-            elif request.type == WebsocketResponseEnum.GAME_LEAVE:
-                pass
+            request = await websocket.receive_json()
+            request_base = WebsocketBase(**request)
+            if request_base.type == WebsocketResponseEnum.GAME_CREATE:
+                game_id = game_data.register_game(user)
+                response = WebsocketGame(type=WebsocketResponseEnum.GAME_CREATE, game_id=game_id)
+                await websocket.send_json(response.dict())
+                await user_data.broadcast(None, UserStateEnum.LOBBY, response)
+            elif request_base.type == WebsocketResponseEnum.GAME_LEAVE:
+                request = WebsocketGame(**request)
+                game_data.remove_game(user, request.game_id)
+                response = WebsocketGame(type=WebsocketResponseEnum.GAME_LEAVE, game_id=request.game_id)
+                await user_data.broadcast(None, UserStateEnum.LOBBY, response)
             else:
-                await websocket.send_json(WebsocketBase(type=WebsocketResponseEnum.INVALID).dict())
-    except (PyJWTError, JSONDecodeError, TypeError):
+                raise TypeError
+    except (PyJWTError, JSONDecodeError, TypeError, KeyError, ValueError):
         await websocket.send_json(WebsocketBase(type=WebsocketResponseEnum.INVALID).dict())
     except WebSocketDisconnect:
         pass

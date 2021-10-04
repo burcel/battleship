@@ -35,4 +35,4 @@ class WebsocketLobby(WebsocketBase):
 
 
 class WebsocketGame(WebsocketBase):
-    game_id: str
+    game_id: int
