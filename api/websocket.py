@@ -43,15 +43,24 @@ async def websocket_endpoint(websocket: WebSocket):
             request = await websocket.receive_json()
             request_base = WebsocketBase(**request)
             if request_base.type == WebsocketResponseEnum.GAME_CREATE:
-                game_id = game_data.register_game(user)
-                response = WebsocketGame(type=WebsocketResponseEnum.GAME_CREATE, game_id=game_id)
-                await websocket.send_json(response.dict())
-                await user_data.broadcast(None, UserStateEnum.LOBBY, response)
+                game_id = None if "game_id" not in request else WebsocketGame(**request).game_id
+                game = game_data.register_game(user, game_id)
+                response_game = WebsocketGame(type=WebsocketResponseEnum.GAME_CREATE, game_id=game.game_id)
+                await websocket.send_json(response_game.dict())
+                await user_data.broadcast(None, UserStateEnum.LOBBY, response_game)
+                # Check if user entered a game or created one
+                if game.users[0].username != user.username:
+                    # Send message to game creator
+                    await user_data.send(game.users[0].username, WebsocketUser(type=WebsocketResponseEnum.GAME_CREATE, username=user.username))
             elif request_base.type == WebsocketResponseEnum.GAME_LEAVE:
-                request = WebsocketGame(**request)
-                game_data.remove_game(user, request.game_id)
-                response = WebsocketGame(type=WebsocketResponseEnum.GAME_LEAVE, game_id=request.game_id)
+                request_game = WebsocketGame(**request)
+                game = game_data.remove_game(user, request_game.game_id)
+                response = WebsocketGame(type=WebsocketResponseEnum.GAME_LEAVE, game_id=response_game.game_id)
                 await user_data.broadcast(None, UserStateEnum.LOBBY, response)
+                # Check if user left the game of somebody else
+                if game.users[0].username != user.username:
+                    # Send message to game creator
+                    await user_data.send(game.users[0].username, WebsocketUser(type=WebsocketResponseEnum.GAME_LEAVE, username=user.username))
             else:
                 raise TypeError
     except (PyJWTError, JSONDecodeError, TypeError, KeyError, ValueError):
@@ -63,7 +72,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return None
         if user.state == UserStateEnum.LOBBY:
             # Send user info to lobby as left
-            response = WebsocketUser(type=WebsocketResponseEnum.LOBBY_USER_OUT, username=user.username)
-            await user_data.broadcast(user.username, UserStateEnum.LOBBY, response)
+            response_user = WebsocketUser(type=WebsocketResponseEnum.LOBBY_USER_OUT, username=user.username)
+            await user_data.broadcast(user.username, UserStateEnum.LOBBY, response_user)
         user_data.remove_username(user.username)
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)

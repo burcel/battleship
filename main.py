@@ -19,11 +19,9 @@ html = """
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Chat</title>
+        <title>Battleship</title>
     </head>
     <body>
-        <h1>Login</h1>
-        
         <h1>Examples</h1>
         <div style="padding-bottom: 10px;">
             {"type": "TOKEN", "token": ""}|
@@ -31,12 +29,13 @@ html = """
             <button onclick="populateMessage('token')">Populate</button>
         </div>
         <div style="padding-bottom: 10px;">
-            {"type": "GAME_CREATE"}|
+            {"type": "GAME_CREATE", "game_id": x}|
+            game_id: <input type="text" id="game-create-game-id">
             <button onclick="populateMessage('game-create')">Populate</button>
         </div>
         <div style="padding-bottom: 10px;">
-            {"type": "GAME_LEAVE", "game_id": x}}|
-            game_id: <input type="text" id="game-id">
+            {"type": "GAME_LEAVE", "game_id": x}|
+            game_id: <input type="text" id="game-leave-game-id">
             <button onclick="populateMessage('game-leave')">Populate</button>
         </div>
         <hr>
@@ -62,18 +61,27 @@ html = """
                 input.value = ''
                 event.preventDefault()
             }
-            var examples = {
-                "token": {"type": "TOKEN", "token": undefined},
-                "game-create": {"type": "GAME_CREATE"},
-                "game-leave": {"type": "GAME_LEAVE", "game_id": undefined}
-            }
-            function populateMessage(id) {
-                if (id === 'token') {
-                    document.getElementById("messageText").value = JSON.stringify({"type": "TOKEN", "token": document.getElementById(id).value})
-                } else if (id === 'game-create') {
-                    document.getElementById("messageText").value = JSON.stringify({"type": "GAME_CREATE"})
-                } else if (id === 'game-leave') {
-                    document.getElementById("messageText").value = JSON.stringify({"type": "GAME_LEAVE", "game_id": document.getElementById('game-id').value})
+            function populateMessage(type) {
+                if (type === 'token') {
+                    document.getElementById("messageText").value = JSON.stringify({
+                        "type": "TOKEN",
+                        "token": document.getElementById('token').value
+                    })
+                } else if (type === 'game-create') {
+                    var gameIdStr = document.getElementById('game-create-game-id').value
+                    if (gameIdStr.length == 0) {
+                        document.getElementById("messageText").value = JSON.stringify({"type": "GAME_CREATE"})
+                    } else {
+                        document.getElementById("messageText").value = JSON.stringify({
+                            "type": "GAME_CREATE",
+                            "game_id": parseInt(document.getElementById('game-create-game-id').value)
+                        })
+                    }
+                } else if (type === 'game-leave') {
+                    document.getElementById("messageText").value = JSON.stringify({
+                        "type": "GAME_LEAVE",
+                        "game_id": parseInt(document.getElementById('game-leave-game-id').value)
+                    })
                 }
             }
         </script>

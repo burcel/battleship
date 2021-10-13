@@ -15,6 +15,7 @@ class WebsocketResponseEnum(str, Enum):
     LOBBY_GAME_OUT = "LOBBY_GAME_OUT"
     GAME_CREATE = "GAME_CREATE"
     GAME_LEAVE = "GAME_LEAVE"
+    MESSAGE = "MESSAGE"
 
 
 class WebsocketBase(BaseModel):
@@ -31,7 +32,7 @@ class WebsocketUser(WebsocketBase):
 
 class WebsocketLobby(WebsocketBase):
     user_list: List[str]
-    game_list: List[str]
+    game_list: List[int]
 
 
 class WebsocketGame(WebsocketBase):
