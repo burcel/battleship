@@ -2,15 +2,26 @@ from enum import IntEnum
 from typing import Optional
 
 from fastapi import WebSocket
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, EmailStr
 
 
 class UserBaseLogin(BaseModel):
-    username: constr(min_length=2, max_length=20)  # type: ignore
+    username: constr(min_length=3, max_length=50)  # type: ignore
+    password: str
 
 
 class UserBaseLoginResponse(BaseModel):
     token: str
+
+
+class UserBaseCreate(UserBaseLogin):
+    email: EmailStr
+
+
+# -->
+
+
+
 
 
 class UserStateEnum(IntEnum):
@@ -26,7 +37,3 @@ class UserBaseDatabase(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-class Message(BaseModel):
-    message: str

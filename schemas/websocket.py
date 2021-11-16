@@ -15,6 +15,7 @@ class WebsocketResponseEnum(str, Enum):
     LOBBY_GAME_OUT = "LOBBY_GAME_OUT"
     GAME_CREATE = "GAME_CREATE"
     GAME_LEAVE = "GAME_LEAVE"
+    GAME_READY = "GAME_READY"
     MESSAGE = "MESSAGE"
 
 

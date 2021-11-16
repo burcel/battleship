@@ -1,0 +1,7 @@
+name: "Battleship"
+server:
+  ip: "0.0.0.0"
+  port: 8000
+  token_expire_min: 43200  # 30 days
+database:
+  url: "sqlite:///battleship.db"

@@ -1,18 +1,29 @@
-from typing import Optional
-
 import uvicorn
-from fastapi import APIRouter, Cookie, Depends, FastAPI, Query, WebSocket, status
+from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from api import user, websocket
+from core.db import Base, engine
 from core.settings import settings
 
-app = FastAPI(title=settings.PROJECT_NAME)
+# Create sqlalchemy tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title=settings.name)
 
 api_router = APIRouter()
-api_router.include_router(user.router, tags=["login"])
-api_router.include_router(websocket.router)
+api_router.include_router(user.router, tags=["user"])
+# api_router.include_router(websocket.router)
 app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 html = """
@@ -96,4 +107,4 @@ async def get():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host=settings.SERVER_IP, port=settings.SERVER_PORT)
+    uvicorn.run(app, host=settings.server_ip, port=settings.server_port)

@@ -1,6 +1,6 @@
 from json.decoder import JSONDecodeError
 
-from core.security import decode_access_token
+from core.security import Security
 from data.user import user_data
 from data.game import game_data
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
@@ -17,7 +17,7 @@ def authenticate_socket(request: WebsocketToken) -> UserBaseDatabase:
     # Check if token exists
     if request.type != WebsocketResponseEnum.TOKEN:
         raise PyJWTError
-    user: UserBaseLogin = decode_access_token(request.token)
+    user: UserBaseLogin = Security.decode_token(request.token)
     user_session = user_data.get_user(user.username)
     if user_session is None:
         raise PyJWTError
