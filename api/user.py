@@ -5,10 +5,8 @@ from core.db import get_session
 from core.security import Security
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from jwt.exceptions import PyJWTError
-from models.users import Users
 from schemas.message import Message
-from schemas.user import UserBaseLogin, UserBaseLoginResponse, UserBaseCreate
+from schemas.user import UserBaseLogin, UserBaseLoginResponse, UserBaseCreate, UserBaseResponse
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -24,10 +22,10 @@ router = APIRouter()
 )
 async def login(user: UserBaseLogin, session: Session = Depends(get_session)) -> UserBaseLoginResponse:
     """Login request"""
-    db_user = ControllerUser.authenticate(session, username=user.username, password=user.password)
+    db_user = ControllerUser.authenticate(session, user.username, user.password)
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
-    access_token = Security.create_token(user)
+    access_token = Security.create_token(db_user)
     return UserBaseLoginResponse(token=access_token)
 
 
@@ -41,7 +39,8 @@ async def login(user: UserBaseLogin, session: Session = Depends(get_session)) ->
 )
 async def logout(user: UserBaseLoginResponse) -> Any:
     """Logout request"""
-    return {"TBD"}
+    # TODO: delete token
+    return Message(detail="Logout is successful.")
 
 
 @router.post(
@@ -54,8 +53,23 @@ async def logout(user: UserBaseLoginResponse) -> Any:
 )
 async def create(user: UserBaseCreate, session: Session = Depends(get_session)) -> Any:
     """Create user request"""
-    db_user = ControllerUser.get_by_username(session, username=user.username)
+    db_user = ControllerUser.get_by_username(session, user.username)
     if db_user is not None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Username is taken.")
+    db_user = ControllerUser.get_by_email(session, user.email)
+    if db_user is not None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email is taken.")
     ControllerUser.create(session, user=user)
-    return Message(message="User is created.")
+    return Message(detail="User is created.")
+
+
+@router.post(
+    "/{user_id}",
+    response_model=UserBaseResponse,
+    responses={
+        status.HTTP_200_OK: {"model": UserBaseResponse}
+    }
+)
+async def get(user_id: int, session: Session = Depends(get_session)) -> Any:
+    """Create user request"""
+    return ControllerUser.get_by_id(session, user_id=user_id)

@@ -5,6 +5,11 @@ from fastapi import WebSocket
 from pydantic import BaseModel, constr, EmailStr
 
 
+class UserBaseSession(BaseModel):
+    id: int
+    username: constr(min_length=3, max_length=50)
+
+
 class UserBaseLogin(BaseModel):
     username: constr(min_length=3, max_length=50)  # type: ignore
     password: str
@@ -12,28 +17,16 @@ class UserBaseLogin(BaseModel):
 
 class UserBaseLoginResponse(BaseModel):
     token: str
+    token_type: str = "bearer"
 
 
 class UserBaseCreate(UserBaseLogin):
     email: EmailStr
 
 
-# -->
-
-
-
-
-
-class UserStateEnum(IntEnum):
-    LOGGED = 0
-    LOBBY = 1
-    GAME = 2
-
-
-class UserBaseDatabase(BaseModel):
-    username: constr(min_length=2, max_length=20)  # type: ignore
-    websocket: Optional[WebSocket] = None
-    state: UserStateEnum = UserStateEnum.LOGGED
+class UserBaseResponse(BaseModel):
+    username: constr(min_length=3, max_length=50)  # type: ignore
+    email: EmailStr
 
     class Config:
-        arbitrary_types_allowed = True
+        orm_mode = True

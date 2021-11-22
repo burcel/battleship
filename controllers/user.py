@@ -22,8 +22,8 @@ class ControllerUser:
 
     @classmethod
     def create(cls, session: Session, user: UserBaseCreate) -> Users:
-        user.password = Security.get_pwd_hash(user.password)
         db_user = Users(**user.dict())
+        db_user.password = Security.get_pwd_hash(user.password)
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
@@ -31,7 +31,7 @@ class ControllerUser:
 
     @classmethod
     def authenticate(cls, session: Session, username: str, password: str) -> Optional[Users]:
-        user = cls.get_by_username(session, username=username)
+        user = cls.get_by_username(session, username)
         if user is not None and Security.verify_pwd(password, user.password) is True:
             return user
         else:

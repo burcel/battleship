@@ -3,17 +3,20 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
-from api import user, websocket
+from api import user, game, websocket
+import api
 from core.db import Base, engine
 from core.settings import settings
 
 # Create sqlalchemy tables
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.name)
 
 api_router = APIRouter()
-api_router.include_router(user.router, tags=["user"])
+api_router.include_router(user.router, prefix="/user", tags=["user"])
+api_router.include_router(game.router, prefix="/game", tags=["game"])
 # api_router.include_router(websocket.router)
 app.include_router(api_router)
 
