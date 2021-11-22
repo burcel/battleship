@@ -1,13 +1,13 @@
-from json.decoder import JSONDecodeError
+# from json.decoder import JSONDecodeError
 
-from core.security import Security
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
-from fastapi.logger import logger
-from jwt.exceptions import PyJWTError
-from schemas.user import UserBaseDatabase, UserBaseLogin, UserStateEnum
-from schemas.websocket import WebsocketBase, WebsocketResponseEnum, WebsocketToken, WebsocketUser, WebsocketGame
+# from core.security import Security
+# from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
+# from fastapi.logger import logger
+# from jwt.exceptions import PyJWTError
+# from schemas.user import UserBaseDatabase, UserBaseLogin, UserStateEnum
+# from schemas.websocket import WebsocketBase, WebsocketResponseEnum, WebsocketToken, WebsocketUser, WebsocketGame
 
-router = APIRouter()
+# router = APIRouter()
 
 
 # def authenticate_socket(request: WebsocketToken) -> UserBaseDatabase:

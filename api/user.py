@@ -1,12 +1,13 @@
 from typing import Any
 
 from controllers.user import ControllerUser
+from core.auth import JWTBearer
 from core.db import get_session
 from core.security import Security
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from schemas.message import Message
-from schemas.user import UserBaseLogin, UserBaseLoginResponse, UserBaseCreate, UserBaseResponse
+from schemas.user import UserBaseCreate, UserBaseLogin, UserBaseLoginResponse, UserBaseResponse, UserBaseSession
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -63,13 +64,19 @@ async def create(user: UserBaseCreate, session: Session = Depends(get_session)) 
     return Message(detail="User is created.")
 
 
-@router.post(
+@router.get(
     "/{user_id}",
     response_model=UserBaseResponse,
     responses={
-        status.HTTP_200_OK: {"model": UserBaseResponse}
+        status.HTTP_200_OK: {"model": UserBaseResponse},
+        status.HTTP_401_UNAUTHORIZED: {"model": Message},
+        status.HTTP_403_FORBIDDEN: {"model": Message}
     }
 )
-async def get(user_id: int, session: Session = Depends(get_session)) -> Any:
-    """Create user request"""
+async def get(
+    user_id: int,
+    session: Session = Depends(get_session),
+    user: UserBaseSession = Depends(JWTBearer())
+) -> Any:
+    """Get info on given user"""
     return ControllerUser.get_by_id(session, user_id=user_id)
