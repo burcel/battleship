@@ -44,3 +44,16 @@ class ControllerGame:
             query = query.filter(Games.name.contains(game_param.name) | (creator_user.username.contains(game_param.name)) | (second_user.username.contains(game_param.name)))
 
         return query.order_by(desc(Games.id)).offset(game_param.page).limit(cls.LIMIT).all()
+
+    @staticmethod
+    def join(session: Session, game_id: int, user_id: int) -> None:
+        session.query(Games).where(Games.id == game_id).update({Games.second_user_id: user_id})
+
+    @staticmethod
+    def get(session: Session, game_id: int) -> Games:
+        creator_user = aliased(Users)
+        second_user = aliased(Users)
+        return session.query(Games)\
+            .join(creator_user, Games.creator_user_id == creator_user.id, isouter=True)\
+            .join(second_user, Games.second_user_id == second_user.id, isouter=True)\
+            .filter(Games.id == game_id)

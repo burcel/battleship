@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint
+from pydantic import BaseModel, conint, constr
 
 
 class GameBaseCreate(BaseModel):
@@ -9,7 +10,7 @@ class GameBaseCreate(BaseModel):
 
 
 class GameBaseCreateResponse(BaseModel):
-    game_id: int
+    id: int
 
 
 class GameBaseList(BaseModel):
@@ -20,6 +21,20 @@ class GameBaseList(BaseModel):
 class GameBaseResponse(BaseModel):
     id: int
     name: constr(min_length=1, max_length=200)
+    with_password: bool = False
 
     class Config:
         orm_mode = True
+
+
+class GameBaseJoin(BaseModel):
+    id: conint(ge=0)
+    password: Optional[constr(min_length=1, max_length=200)] = None
+
+
+class GameBase(BaseModel):
+    id: conint(ge=0)
+    name: constr(min_length=1, max_length=200)
+    create_date: datetime
+    creator_username: constr(min_length=3, max_length=50)
+    second_username: Optional[constr(min_length=3, max_length=50)]
