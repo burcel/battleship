@@ -1,6 +1,7 @@
 from typing import Any
 
 from controllers.user import ControllerUser
+from controllers.token import ControllerToken
 from core.auth import JWTBearer
 from core.db import get_session
 from core.security import Security
@@ -26,7 +27,19 @@ async def login(user: UserBaseLogin, session: Session = Depends(get_session)) ->
     db_user = ControllerUser.authenticate(session, user.username, user.password)
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
-    access_token = Security.create_token(db_user)
+    # Check token
+    db_token = ControllerToken.get_by_user_id(session, db_user.id)
+    if db_token is None:
+        # User is not logged in before
+        access_token = Security.create_token(db_user)
+        ControllerToken.save_token(session, access_token, db_user.id)
+    elif db_token.valid is True:
+        # User is already logged in
+        access_token = db_token.token
+    else:
+        # User is logged out -> Give new token
+        access_token = Security.create_token(db_user)
+        ControllerToken.update_token(session, db_token.id, access_token)
     return UserBaseLoginResponse(token=access_token)
 
 
@@ -38,9 +51,14 @@ async def login(user: UserBaseLogin, session: Session = Depends(get_session)) ->
         status.HTTP_401_UNAUTHORIZED: {"model": Message},
     }
 )
-async def logout(user: UserBaseLoginResponse) -> Any:
+async def logout(session: Session = Depends(get_session), user: UserBaseSession = Depends(JWTBearer())) -> Message:
     """Logout request"""
-    # TODO: delete token
+    db_token = ControllerToken.get_by_user_id(session, user.id)
+    if db_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User cannot be logged out.")
+    elif db_token.valid is False:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is already logged out.")
+    ControllerToken.invalidate_token(session, db_token.id)
     return Message(detail="Logout is successful.")
 
 
