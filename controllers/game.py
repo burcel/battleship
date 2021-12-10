@@ -50,10 +50,11 @@ class ControllerGame:
         session.query(Games).where(Games.id == game_id).update({Games.second_user_id: user_id})
 
     @staticmethod
-    def get(session: Session, game_id: int) -> Games:
+    def get(session: Session, game_id: int) -> Optional[Games]:
         creator_user = aliased(Users)
         second_user = aliased(Users)
         return session.query(Games)\
             .join(creator_user, Games.creator_user_id == creator_user.id, isouter=True)\
             .join(second_user, Games.second_user_id == second_user.id, isouter=True)\
-            .filter(Games.id == game_id)
+            .filter(Games.id == game_id)\
+            .first()

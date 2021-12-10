@@ -2,7 +2,7 @@ from typing import Any
 
 from controllers.user import ControllerUser
 from controllers.token import ControllerToken
-from core.auth import JWTBearer
+from core.auth import JWTBearer, TokenValidator
 from core.db import get_session
 from core.security import Security
 from fastapi import APIRouter, Depends, status
@@ -19,7 +19,8 @@ router = APIRouter()
     response_model=UserBaseLoginResponse,
     responses={
         status.HTTP_200_OK: {"model": UserBaseLoginResponse},
-        status.HTTP_401_UNAUTHORIZED: {"model": Message}
+        status.HTTP_401_UNAUTHORIZED: {"model": Message},
+        status.HTTP_403_FORBIDDEN: {"model": Message}
     }
 )
 async def login(user: UserBaseLogin, session: Session = Depends(get_session)) -> UserBaseLoginResponse:
@@ -49,15 +50,12 @@ async def login(user: UserBaseLogin, session: Session = Depends(get_session)) ->
     responses={
         status.HTTP_200_OK: {"model": Message},
         status.HTTP_401_UNAUTHORIZED: {"model": Message},
+        status.HTTP_403_FORBIDDEN: {"model": Message}
     }
 )
 async def logout(session: Session = Depends(get_session), user: UserBaseSession = Depends(JWTBearer())) -> Message:
     """Logout request"""
-    db_token = ControllerToken.get_by_user_id(session, user.id)
-    if db_token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User cannot be logged out.")
-    elif db_token.valid is False:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is already logged out.")
+    db_token = TokenValidator.check_token(session, user.id)
     ControllerToken.invalidate_token(session, db_token.id)
     return Message(detail="Logout is successful.")
 
@@ -97,4 +95,5 @@ async def get(
     user: UserBaseSession = Depends(JWTBearer())
 ) -> Any:
     """Get info on given user"""
+    TokenValidator.check_token(session, user.id)
     return ControllerUser.get_by_id(session, user_id=user_id)

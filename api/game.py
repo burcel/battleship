@@ -1,13 +1,14 @@
-from typing import List, Any
+from typing import Any, List
 
 from controllers.game import ControllerGame
-from core.auth import JWTBearer
+from core.auth import JWTBearer, TokenValidator
 from core.db import get_session
 from core.security import Security
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPBearer
-from schemas.game import GameBaseCreate, GameBaseCreateResponse, GameBaseList, GameBaseResponse, GameBaseJoin, GameBase
+from models.games import Games
+from schemas.game import GameBase, GameBaseCreate, GameBaseCreateResponse, GameBaseJoin, GameBaseList, GameBaseResponse
 from schemas.message import Message
 from schemas.user import UserBaseSession
 from sqlalchemy.orm import Session
@@ -30,8 +31,9 @@ async def list(
     game_params: GameBaseList,
     session: Session = Depends(get_session),
     user: UserBaseSession = Depends(JWTBearer())
-) -> List[GameBaseResponse]:
+) -> List[Games]:
     """List games"""
+    TokenValidator.check_token(session, user.id)
     game_list = ControllerGame.list(session, game_params)
     for game in game_list:
         if game.password is None:
@@ -56,6 +58,7 @@ async def create(
     user: UserBaseSession = Depends(JWTBearer())
 ) -> GameBaseCreateResponse:
     """Create game request"""
+    TokenValidator.check_token(session, user.id)
     # Check if user is in another game
     db_game = ControllerGame.get_by_username(session, user.username)
     if db_game is not None:
@@ -84,6 +87,7 @@ async def join(
     user: UserBaseSession = Depends(JWTBearer())
 ) -> Message:
     """Join game request"""
+    TokenValidator.check_token(session, user.id)
     # Check if user is in another game
     db_game = ControllerGame.get_by_username(session, user.username)
     if db_game is not None:
@@ -119,4 +123,5 @@ async def get(
     user: UserBaseSession = Depends(JWTBearer())
 ) -> GameBase:
     """Get info on given game"""
+    TokenValidator.check_token(session, user.id)
     return ControllerGame.get(session, game_id)
