@@ -17,7 +17,7 @@ app = FastAPI(title=settings.name)
 api_router = APIRouter()
 api_router.include_router(user.router, prefix="/user", tags=["user"])
 api_router.include_router(game.router, prefix="/game", tags=["game"])
-# api_router.include_router(websocket.router)
+api_router.include_router(websocket.router)
 app.include_router(api_router)
 
 app.add_middleware(

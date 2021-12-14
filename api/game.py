@@ -4,7 +4,7 @@ from controllers.game import ControllerGame
 from core.auth import JWTBearer, TokenValidator
 from core.db import get_session
 from core.security import Security
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Path
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPBearer
 from models.games import Games
@@ -118,10 +118,10 @@ async def join(
     }
 )
 async def get(
-    game_id: int,
+    game_id: int = Path(..., ge=0),
     session: Session = Depends(get_session),
     user: UserBaseSession = Depends(JWTBearer())
-) -> GameBase:
+) -> Any:
     """Get info on given game"""
     TokenValidator.check_token(session, user.id)
     return ControllerGame.get(session, game_id)

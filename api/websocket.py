@@ -1,3 +1,39 @@
+from core.auth import TokenValidator
+from core.db import get_session
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, Depends, HTTPException
+from schemas.websocket import WebsocketBase, WebsocketResponse, WebsocketResponseEnum, WebsocketToken
+from sqlalchemy.orm import Session
+
+
+router = APIRouter()
+
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            request = await websocket.receive_json()
+            print(request)
+            request_base = WebsocketBase(**request)
+            if request_base.type == WebsocketResponseEnum.TOKEN:
+                user = TokenValidator.authorize_socket(WebsocketToken(**request))
+                print(user)
+                # TokenValidator.check_token(session, user.id)
+                # TODO: check if user is in a game
+                await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_200_OK).dict())
+            else:
+                await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_400_BAD_REQUEST).dict())
+    except (ValueError, TypeError):
+        await websocket.send_json(WebsocketResponse(type=WebsocketResponseEnum.INVALID, status=status.HTTP_400_BAD_REQUEST).dict())
+    except HTTPException:
+        await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_400_BAD_REQUEST).dict())
+    except WebSocketDisconnect as e:
+        ...
+    finally:
+        await websocket.close(code=status.WS_1000_NORMAL_CLOSURE)
+
+
 # from json.decoder import JSONDecodeError
 
 # from core.security import Security

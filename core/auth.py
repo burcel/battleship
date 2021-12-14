@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from models.tokens import Tokens
 from schemas.user import UserBaseSession
 from sqlalchemy.orm import Session
+from schemas.websocket import WebsocketToken
 
 from core.security import Security
 
@@ -36,3 +37,8 @@ class TokenValidator:
         elif db_token.valid is False:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authorization code.")
         return db_token
+
+    @staticmethod
+    def authorize_socket(token: WebsocketToken) -> UserBaseSession:
+        """Authorize token coming"""
+        return Security.decode_token(token.token)

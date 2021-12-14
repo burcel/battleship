@@ -5,7 +5,7 @@ from controllers.token import ControllerToken
 from core.auth import JWTBearer, TokenValidator
 from core.db import get_session
 from core.security import Security
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Path
 from fastapi.exceptions import HTTPException
 from schemas.message import Message
 from schemas.user import UserBaseCreate, UserBaseLogin, UserBaseLoginResponse, UserBaseResponse, UserBaseSession
@@ -90,7 +90,7 @@ async def create(user: UserBaseCreate, session: Session = Depends(get_session)) 
     }
 )
 async def get(
-    user_id: int,
+    user_id: int = Path(..., ge=0),
     session: Session = Depends(get_session),
     user: UserBaseSession = Depends(JWTBearer())
 ) -> Any:
