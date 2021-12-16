@@ -17,11 +17,15 @@ class ControllerGame:
         return session.query(Games).filter(Games.id == game_id).first()
 
     @staticmethod
-    def get_by_username(session: Session, username: str) -> Optional[Games]:
+    def get_by_user_id(session: Session, user_id: int) -> Optional[Games]:
+        return session.query(Games).filter((Games.creator_user_id == user_id) | (Games.second_user_id == user_id)).first()
+
+    @classmethod
+    def get_by_username(cls, session: Session, username: str) -> Optional[Games]:
         user = ControllerUser.get_by_username(session, username)
         if user is None:
             return None
-        return session.query(Games).filter((Games.creator_user_id == user.id) | (Games.second_user_id == user.id)).first()
+        return cls.get_by_user_id(session, user.id)
 
     @staticmethod
     def create(session: Session, game: GameBaseCreate, user_id: int) -> Games:
