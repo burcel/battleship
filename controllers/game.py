@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from sqlalchemy.sql.functions import user
+
 from models.games import Games
 from models.users import Users
 from schemas.game import GameBaseCreate, GameBaseList
@@ -11,6 +13,16 @@ from controllers.user import ControllerUser
 
 class ControllerGame:
     LIMIT = 10
+
+    @staticmethod
+    def get_other_user_id(game: Games, user_id: int) -> Optional[int]:
+        """Given game and user id, return the other user id in the game"""
+        other_user_id = None
+        if game.creator_user_id == user_id:
+            other_user_id = game.second_user_id  # Might ne None
+        elif game.second_user_id == user_id:
+            other_user_id = game.creator_user_id  # Cannot be None
+        return other_user_id
 
     @staticmethod
     def get_by_id(session: Session, game_id: int) -> Optional[Games]:
@@ -52,6 +64,7 @@ class ControllerGame:
     @staticmethod
     def join(session: Session, game_id: int, user_id: int) -> None:
         session.query(Games).where(Games.id == game_id).update({Games.second_user_id: user_id})
+        session.commit()
 
     @staticmethod
     def get(session: Session, game_id: int) -> Optional[Games]:

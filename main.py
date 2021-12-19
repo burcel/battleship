@@ -43,14 +43,9 @@ html = """
             <button onclick="populateMessage('token')">Populate</button>
         </div>
         <div style="padding-bottom: 10px;">
-            {"type": "GAME_CREATE", "game_id": x}|
-            game_id: <input type="text" id="game-create-game-id">
-            <button onclick="populateMessage('game-create')">Populate</button>
-        </div>
-        <div style="padding-bottom: 10px;">
-            {"type": "GAME_LEAVE", "game_id": x}|
-            game_id: <input type="text" id="game-leave-game-id">
-            <button onclick="populateMessage('game-leave')">Populate</button>
+            {"type": "MESSAGE", "message": x}|
+            message: <input type="text" id="message">
+            <button onclick="populateMessage('message')">Populate</button>
         </div>
         <hr>
         <h1>WebSocket</h1>
@@ -81,20 +76,10 @@ html = """
                         "type": "TOKEN",
                         "token": document.getElementById('token').value
                     })
-                } else if (type === 'game-create') {
-                    var gameIdStr = document.getElementById('game-create-game-id').value
-                    if (gameIdStr.length == 0) {
-                        document.getElementById("messageText").value = JSON.stringify({"type": "GAME_CREATE"})
-                    } else {
-                        document.getElementById("messageText").value = JSON.stringify({
-                            "type": "GAME_CREATE",
-                            "game_id": parseInt(document.getElementById('game-create-game-id').value)
-                        })
-                    }
-                } else if (type === 'game-leave') {
+                } else if (type === 'message') {
                     document.getElementById("messageText").value = JSON.stringify({
-                        "type": "GAME_LEAVE",
-                        "game_id": parseInt(document.getElementById('game-leave-game-id').value)
+                        "type": "MESSAGE",
+                        "message": document.getElementById('message').value
                     })
                 }
             }

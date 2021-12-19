@@ -21,3 +21,7 @@ class WebsocketResponse(WebsocketBase):
 
 class WebsocketToken(WebsocketBase):
     token: str
+
+
+class WebsocketMessage(WebsocketBase):
+    message: str
