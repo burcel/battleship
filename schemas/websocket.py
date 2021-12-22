@@ -25,3 +25,7 @@ class WebsocketToken(WebsocketBase):
 
 class WebsocketMessage(WebsocketBase):
     message: str
+
+
+class WebsocketUser(WebsocketBase):
+    username: str

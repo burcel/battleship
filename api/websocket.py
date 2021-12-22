@@ -7,7 +7,7 @@ from core.websocket import websocket_manager
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from models.games import Games
 from schemas.user import UserBaseSession
-from schemas.websocket import WebsocketBase, WebsocketResponse, WebsocketResponseEnum, WebsocketToken, WebsocketMessage
+from schemas.websocket import WebsocketBase, WebsocketResponse, WebsocketResponseEnum, WebsocketToken, WebsocketMessage, WebsocketUser
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -34,11 +34,16 @@ async def websocket_endpoint(websocket: WebSocket, session: Session = Depends(ge
                 await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_200_OK).dict())
                 authenticated = True
                 websocket_manager.add_connection(user.id, websocket)
+                # Check if user is secondary player -> Notify game creator
+                if game.second_user_id == user.id:
+                    user_in = WebsocketUser(type=WebsocketResponseEnum.USER_IN, username=game.second_user.username)
+                    await websocket_manager.send(game.creator_user_id, user_in.dict())  # type: ignore
             elif request_base.type == WebsocketResponseEnum.MESSAGE and authenticated is True:
                 message = WebsocketMessage(**request)
+                session.refresh(game)
                 user_id = ControllerGame.get_other_user_id(game, user.id)  # type: ignore
                 if user_id is not None:
-                    websocket_manager.send(user_id, message.dict())
+                    await websocket_manager.send(user_id, message.dict())
                 await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_200_OK).dict())
             else:
                 await websocket.send_json(WebsocketResponse(type=request_base.type, status=status.HTTP_400_BAD_REQUEST).dict())
