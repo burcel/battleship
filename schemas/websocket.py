@@ -9,6 +9,9 @@ class WebsocketResponseEnum(str, Enum):
     MESSAGE = "MESSAGE"
     USER_IN = "USER_IN"
     USER_OUT = "USER_OUT"
+    READY = "READY"
+    BOARD = "BOARD"
+    TURN = "TURN"
 
 
 class WebsocketBase(BaseModel):
@@ -29,3 +32,7 @@ class WebsocketMessage(WebsocketBase):
 
 class WebsocketUser(WebsocketBase):
     username: str
+
+
+class WebsocketBoard(WebsocketBase):
+    board: str
