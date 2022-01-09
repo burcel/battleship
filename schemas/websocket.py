@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -12,6 +13,7 @@ class WebsocketResponseEnum(str, Enum):
     READY = "READY"
     BOARD = "BOARD"
     TURN = "TURN"
+    RESULT = "RESULT"
 
 
 class WebsocketBase(BaseModel):
@@ -36,3 +38,18 @@ class WebsocketUser(WebsocketBase):
 
 class WebsocketBoard(WebsocketBase):
     board: str
+
+
+class WebsocketTurn(WebsocketBase):
+    x: int
+    y: int
+
+
+class WebsocketTurnResponse(WebsocketResponse):
+    hit: bool
+    x: int
+    y: int
+
+
+class WebsocketResultResponse(WebsocketResponse):
+    win: bool

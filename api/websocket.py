@@ -1,7 +1,10 @@
 from core.db import get_session
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import (APIRouter, Depends, HTTPException, WebSocket,
+                     WebSocketDisconnect, status)
 from process.websocket import WebsocketProcessor
-from schemas.websocket import WebsocketBase, WebsocketMessage, WebsocketResponse, WebsocketResponseEnum, WebsocketToken
+from schemas.websocket import (WebsocketBase, WebsocketMessage,
+                               WebsocketResponse, WebsocketResponseEnum,
+                               WebsocketToken, WebsocketTurn)
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -21,6 +24,8 @@ async def websocket_endpoint(websocket: WebSocket, session: Session = Depends(ge
                 websocket_processor.message(WebsocketMessage(**request))
             elif request_base.type == WebsocketResponseEnum.READY and websocket_processor.authenticated is True:
                 websocket_processor.ready()
+            elif request_base.type == WebsocketResponseEnum.TURN and websocket_processor.authenticated is True:
+                websocket_processor.turn(WebsocketTurn(**request))
             else:
                 await websocket_processor.default()
                 break
