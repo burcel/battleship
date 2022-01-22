@@ -47,6 +47,16 @@ html = """
             message: <input type="text" id="message">
             <button onclick="populateMessage('message')">Populate</button>
         </div>
+        <div style="padding-bottom: 10px;">
+            {"type": "READY"}
+            <button onclick="populateMessage('ready')">Populate</button>
+        </div>
+        <div style="padding-bottom: 10px;">
+            {"type": "TURN", "x": x, "y": y}|
+            x: <input type="text" id="x">
+            y: <input type="text" id="y">
+            <button onclick="populateMessage('turn')">Populate</button>
+        </div>
         <hr>
         <h1>WebSocket</h1>
         <form action="" onsubmit="sendMessage(event)">
@@ -80,6 +90,14 @@ html = """
                     document.getElementById("messageText").value = JSON.stringify({
                         "type": "MESSAGE",
                         "message": document.getElementById('message').value
+                    })
+                } else if (type === 'ready') {
+                    document.getElementById("messageText").value = JSON.stringify({"type": "READY"})
+                } else if (type === 'turn') {
+                    document.getElementById("messageText").value = JSON.stringify({
+                        "type": "TURN",
+                        "x": document.getElementById('x').value,
+                        "y": document.getElementById('y').value
                     })
                 }
             }

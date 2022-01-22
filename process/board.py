@@ -20,6 +20,7 @@ class Board:
         self.ship_hit_list: List[Tuple[int, int]] = []
         self.ship_miss_list: List[Tuple[int, int]] = []
         self.finished = False
+        self.populate()
 
     def __str__(self) -> str:
         """Return string representation of the board"""
@@ -116,12 +117,15 @@ class Board:
                 # This ship is placed -> Move to the next one
                 break
 
-    def serialize(self) -> str:
+    def serialize(self, hide_ships: bool = False) -> str:
         """Serialize board into string"""
         serialized_str = ""
         for x in range(self.BOARD_DIM):
             for y in range(self.BOARD_DIM):
-                serialized_str += str(self.board[x][y])
+                if hide_ships is True and self.board[x][y] == self.SHIP:
+                    serialized_str += str(self.EMPTY)
+                else:
+                    serialized_str += str(self.board[x][y])
         return serialized_str
 
     def deserialize(self, serialized_str: str) -> None:

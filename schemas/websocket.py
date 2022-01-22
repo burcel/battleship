@@ -37,7 +37,8 @@ class WebsocketUser(WebsocketBase):
 
 
 class WebsocketBoard(WebsocketBase):
-    board: str
+    self_board: str
+    opponent_board: str
 
 
 class WebsocketTurn(WebsocketBase):

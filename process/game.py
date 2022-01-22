@@ -1,19 +1,22 @@
-from typing import Dict, Tuple
+from typing import Dict, Optional
 
 from process.board import Board
 
 
-class GameProcessor:
+class GameManager:
+    ACTIVE_GAMES: Dict[int, Board] = {}
 
-    def __init__(self) -> None:
-        self.creator_board = Board()
-        self.second_board = Board()
+    @classmethod
+    def add_board(cls, user_id: int, board: Board) -> None:
+        """Add given websocket to connection dict"""
+        cls.ACTIVE_GAMES[user_id] = board
 
-    def initialize(self) -> None:
-        """Initialize boards for both players"""
-        self.creator_board.populate()
-        self.second_board.populate()
+    @classmethod
+    def get_board(cls, user_id: int) -> Optional[Board]:
+        """Return board related to user id"""
+        return cls.ACTIVE_GAMES.get(user_id, None)
 
-    def return_boards_str(self) -> Tuple[str, str]:
-        """Return string representations of the board"""
-        return self.creator_board.serialize(), self.second_board.serialize()
+    @classmethod
+    def remove_board(cls, user_id: int) -> None:
+        """Remove user id from connection dict"""
+        cls.ACTIVE_GAMES.pop(user_id, None)

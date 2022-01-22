@@ -17,9 +17,7 @@ class Games(Base):
     second_user_id = Column(Integer, ForeignKey(Users.id), unique=True)
     creator_user_ready = Column(Boolean, default=False)
     second_user_ready = Column(Boolean, default=False)
-    creator_user_board = Column(String(length=100))
-    second_user_board = Column(String(length=100))
-    turn = Column(Integer, default=0)
+    turn = Column(Integer, ForeignKey(Users.id), unique=True)
     move_number = Column(Integer, default=0)
     finished = Column(Boolean, default=False)
 

@@ -19,13 +19,13 @@ async def websocket_endpoint(websocket: WebSocket, session: Session = Depends(ge
             request = await websocket.receive_json()
             request_base = WebsocketBase(**request)
             if request_base.type == WebsocketResponseEnum.TOKEN and websocket_processor.authenticated is False:
-                websocket_processor.authorize_user(WebsocketToken(**request))
+                await websocket_processor.authorize_user(WebsocketToken(**request))
             elif request_base.type == WebsocketResponseEnum.MESSAGE and websocket_processor.authenticated is True:
-                websocket_processor.message(WebsocketMessage(**request))
+                await websocket_processor.message(WebsocketMessage(**request))
             elif request_base.type == WebsocketResponseEnum.READY and websocket_processor.authenticated is True:
-                websocket_processor.ready()
+                await websocket_processor.ready()
             elif request_base.type == WebsocketResponseEnum.TURN and websocket_processor.authenticated is True:
-                websocket_processor.turn(WebsocketTurn(**request))
+                await websocket_processor.turn(WebsocketTurn(**request))
             else:
                 await websocket_processor.default()
                 break

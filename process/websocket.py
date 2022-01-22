@@ -11,7 +11,7 @@ from schemas.websocket import (WebsocketMessage, WebsocketResponse,
                                WebsocketUser, WebsocketBoard, WebsocketTurn)
 from sqlalchemy.orm import Session
 
-from process.game import GameProcessor
+from process.game import GameManager
 
 
 class WebsocketManager:
@@ -43,7 +43,6 @@ class WebsocketProcessor:
         self.session: Session = session
         self.user: Optional[UserBaseSession] = None
         self.game: Optional[Games] = None
-        self.game_processor = GameProcessor()
         self.authenticated = False
 
     async def authorize_user(self, token: WebsocketToken) -> None:
@@ -75,36 +74,66 @@ class WebsocketProcessor:
         await WebsocketManager.send(self.user.id, response.dict())  # type: ignore
 
     async def ready(self) -> None:
-        """Process ready message"""
+        """Process ready message coming from users"""
         self.session.refresh(self.game)
         # Save ready flags
         if self.game.creator_user_id == self.user.id:
             self.game.creator_user_ready = not self.game.creator_user_ready
         else:
             self.game.second_user_ready = not self.game.second_user_ready
+        self.session.commit()
         response = WebsocketResponse(type=WebsocketResponseEnum.READY, status=status.HTTP_200_OK)
         await WebsocketManager.send(self.user.id, response.dict())  # type: ignore
+        # TODO: Maybe notify other user of readiness
         # Check ready flags -> Start game if every user is ready
         if self.game.creator_user_ready is True and self.game.second_user_ready is True:
             # Game is ready -> Initiate boards and send them to users
-            self.game_processor.initialize()
-            self.game.creator_user_board, self.game.second_user_board = self.game_processor.return_boards_str()
-            # Send board to creator
-            creator_board = WebsocketBoard(type=WebsocketResponseEnum.BOARD, board=self.game.creator_user_board)
-            await WebsocketManager.send(self.game.creator_user_id, creator_board.dict())  # type: ignore
-            # Send board to second user
-            second_board = WebsocketBoard(type=WebsocketResponseEnum.BOARD, board=self.game.second_user_board)
-            await WebsocketManager.send(self.game.second_user_id, second_board.dict())  # type: ignore
-            # Send turn to the creator
-            response = WebsocketResponse(type=WebsocketResponseEnum.TURN, status=status.HTTP_200_OK)
-            await WebsocketManager.send(self.game.creator_user_id, response.dict())  # type: ignore
+            GameManager.add_board(self.game.creator_user_id, Board())
+            GameManager.add_board(self.game.second_user_id, Board())
+            await self.send_boards(self.game.creator_user_id, self.game.second_user_id)
+            await self.send_turn(self.game.creator_user_id)
 
     async def turn(self, turn: WebsocketTurn) -> None:
         """Process turn info"""
         self.session.refresh(self.game)
-        # TODO: check turn
+        # Check if it is user's turn to act
+        if self.game.turn != self.user.id:
+            await WebsocketManager.send(self.user.id, WebsocketResponse(type=WebsocketResponseEnum.INVALID, status=status.HTTP_400_BAD_REQUEST).dict())  # type: ignore
+        # Fetch boards of users
+        other_user_id = ControllerGame.get_other_user_id(self.game, self.user.id)
+        self_board = GameManager.get_board(self.user.id)
+        other_board = GameManager.get_board(other_user_id)
+        if self_board is None or other_board is None:
+            raise KeyError
+        # Record hit
+        is_hit = other_board.hit(turn.x, turn.y)
         # TODO: hit and return responses to creator and second user
-        # TODO: change turns
+        self.send_boards(self.game.creator_user_id, self.game.second_user_id)
+        self.send_turn(other_user_id)
+        # Change turn
+        response = WebsocketResponse(type=WebsocketResponseEnum.TURN, status=status.HTTP_200_OK)
+        await WebsocketManager.send(self.game.creator_user_id, response.dict())  # type: ignore
+        self.game.turn = other_user_id
+
+    async def send_boards(self, first_user: int, second_user: int) -> None:
+        """Send board representations to users -> Opponent must not see the ships"""
+        response = WebsocketBoard(
+            type=WebsocketResponseEnum.BOARD,
+            self_board=GameManager.get_board(first_user).serialize(),
+            opponent_board=GameManager.get_board(second_user).serialize(hide_ships=True))
+        await WebsocketManager.send(first_user, response.dict())
+        response = WebsocketBoard(
+            type=WebsocketResponseEnum.BOARD,
+            self_board=GameManager.get_board(second_user).serialize(),
+            opponent_board=GameManager.get_board(first_user).serialize(hide_ships=True))
+        await WebsocketManager.send(second_user, response.dict())
+
+    async def send_turn(self, user_id: int) -> None:
+        """Change turn infor and send it to the user"""
+        self.game.turn = user_id
+        self.session.commit()
+        response = WebsocketResponse(type=WebsocketResponseEnum.TURN, status=status.HTTP_200_OK)
+        await WebsocketManager.send(user_id, response.dict())  # type: ignore
 
     async def default(self) -> None:
         """Send default response to user"""
