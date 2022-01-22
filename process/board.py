@@ -154,6 +154,8 @@ class Board:
             self.ship_hit_list.append((x, y))
             is_hit = True
             self.update_game_status()
+        else:
+            raise ValueError("Only EMPTY or SHIP values can be hit!")
         return is_hit
 
     def update_game_status(self) -> None:
